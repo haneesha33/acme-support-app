@@ -21,11 +21,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  dashboard:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - name: Get AuditLens
         uses: actions/checkout@v4
@@ -59,8 +56,19 @@ jobs:
             --repo "$GITHUB_REPOSITORY" --out ../site/index.html
 
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+
+      - name: Upload site for Pages
+        uses: actions/upload-pages-artifact@v4
         with:
           path: site
+
+  deploy:
+    # GitHub's recommended pattern: deploy in its own job after the build job uploads the site.
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
       - id: deploy
         uses: actions/deploy-pages@v4
